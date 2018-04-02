@@ -1,0 +1,156 @@
+---
+title: "Web Scraping"
+author: "Ashmi"
+date: "February 24, 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+A. (50 Points) Pick at least 2 web scraping toolkits (either automated tools like Import.io or R packages such as rvest) and try to use them to extract data from the Yelp website. In particular, create a search in Yelp to find good burger restaurants in the Boston area. You must try out at least two toolkits, but you will use only one to actually extract and save the full data.
+
+I used two web scraping toolkits:
+1. Instant Data Scraper (chrome extension)
+2. Rvest and SelectorGadget
+
+```{r}
+library(knitr)
+knitr::include_graphics(c('yelp_default_restaurant_list.png','yelp_filter_burger.png','yelp_result_page1.png', 'yelp_result_page2.png', 'yelp_result_page3.png','default_scraper_page.png', 'scrapes_3_pages.png', 'removed_unwanted_columns.png'))
+#The screenshots are of web scraping using Instant Data Scraper
+```
+1. The first screenshot is the default yelp homepage without any filters.
+2. The second is of the page where we filter the restaurants for burgers.
+3. The third one is the first page of the search after we filtered Boston neighborhoods of Allston, Brighton, Back Bay, Beacon Hill, Downtown Area, Fenway, South End, and West End.
+4. & 5. The fourth and fifth screenshots are of the second and third page results of our search.
+6. After we click on the Instant Data Scraper extension in the chrome, we get a table with the data in the webpage in separated columns for each data type.
+7. The seventh screenshot is after we located the next button on the webpage and started crawling to get the data of the first three pages in the search result.
+8. This is the cleaned data after removing unwanted columns. Then I downloaded this data as a csv file which I loaded into R.
+
+
+```{r}
+# Using rvest and selector gadget for web scraping
+library(rvest)
+# The urls of the first three web page results 
+boston_burgers1 <- read_html("https://www.yelp.com/search?find_desc=Burgers&start=0&l=p:MA:Boston::%5BAllston/Brighton,Back_Bay,Beacon_Hill,Downtown,Fenway,South_End,West_End%5D")
+boston_burgers2 <- read_html("https://www.yelp.com/search?find_desc=Burgers&start=10&l=p:MA:Boston::%5BAllston/Brighton,Back_Bay,Beacon_Hill,Downtown,Fenway,South_End,West_End%5D")
+boston_burgers3 <- read_html("https://www.yelp.com/search?find_desc=Burgers&start=20&l=p:MA:Boston::%5BAllston/Brighton,Back_Bay,Beacon_Hill,Downtown,Fenway,South_End,West_End%5D")
+
+#Scrape the website for the restaurant names
+rest_names <- boston_burgers1 %>%
+  html_nodes(".indexed-biz-name span") %>%
+  html_text() 
+rest_names
+
+#Scrape the website for the restaurant addresses
+rest_add <- boston_burgers1 %>%
+  html_nodes(".natural-search-result address") %>%
+  html_text() 
+rest_add
+
+#Scrape the website for the review count
+review_count <- boston_burgers1 %>%
+  html_nodes(".natural-search-result .rating-qualifier") %>%
+  html_text() 
+review_count
+
+#Scrape the website for price range
+price_range <- boston_burgers1 %>%
+  html_nodes(".natural-search-result .bullet-after") %>%
+  html_text()
+price_range
+
+#Scrape the website for service categories
+ser_cat <- boston_burgers1 %>%
+  html_nodes(".natural-search-result .category-str-list a") %>%
+  html_text()
+ser_cat
+```
+
+
+B. (20 points) Import the data you extracted into a data frame in R. Your data frame should have exactly 30 rows, and each row represents a burger restaurant in Boston.
+
+```{r}
+yelp <- read.csv('yelp_data.csv')
+yelp <- as.data.frame(yelp)
+View(yelp)
+```
+
+C. (30 Points) Write a report that compares the tools with a focus on cost, ease of use, features, and your recommendation. Discuss your experience with the tools and why you decided to use the one you picked in the end. Use screenshots of toolkits and your scraping process to support your statements.  Also include a screenshot or an excerpt of your data in the report.
+
+Instant Data Scraper
+It is a Chrome extension which uses AI to detect tabular or listing type data on web pages. Such data can be scraped into CSV or Excel file without the need for any coding. The extension can also click on the “Next” page links or buttons and retrieve data from multiple pages into one file.
+
+Cost: It is free to use
+
+Ease of use: It is very easy to use. To use it,
+do the following:
+1. Open the first page of listing results (products, directory, etc) in your browser
+2. Activate the extension
+3. Extension will guess where your data is. If not happy use “Try another table” button to guess again.
+4. Download CSV or Excel from the first page if that is all you need. Or click to locate “Next” button to mark the “Next” link/button on a website.
+5. Click “Start crawling” to start crawling through multiple pages a website. Extension will show statistics on what is being collected.
+6. Download Excel or CSV file at any time during the crawl.
+7. Clean up Excel or CSV files – it will most likely have some unwanted additional fields that were extracted from the page. Most likely column names will have to be renamed as well.
+
+Features: 
+1. Try another table – It makes alternative tables if the initial table did not have the data you want.
+2. Locate “Next” button – This marks the location of “Next” button on the website. This is used to scrape data from multiple pages into one file.
+3. Crawl delay – It is the time in seconds before going to the next page. Default value is 1 second. It can be increased when pages load information dynamically.
+4. CSV and XLSX file download buttons are there. They are active right away when any data is found.
+
+Rvest
+It is a tool in R which is used to scrape information from web pages.
+
+Cost: It is free to use.
+
+Ease of use: It is not very easy to use if the user does not have previous programming experience. But after going through examples and with some practice, it can be mastered.
+
+Features: 
+1. Create an html document from a url, a file on disk or a string containing html with read_html().
+2. Select parts of a document using css selectors: html_nodes(doc, "table td")
+3. Extract components with html_tag() (the name of the tag), html_text() (all text inside the tag), html_attr() (contents of a single attribute) and html_attrs() (all attributes).
+4. Parse tables into data frames with html_table().
+5. Extract, modify and submit forms with html_form(), set_values() and submit_form().
+6. Detect and repair encoding problems with guess_encoding() and repair_encoding().
+7. Navigate around a website as if you're in a browser with html_session(), jump_to(), follow_link(), back(), forward(), submit_form() and so on. 
+
+My recommendation: Instant Data Scraper
+It scrapes the data very neatly into columns.
+Even people who have no programming experience can use it to get the required data. 
+All it takes is one click of the extension in chrome on the webpage that we want to scrape and it automatically collects all the data in columns which is available for us to download as a csv or excel file.
+The extension runs completely in user’s browser and does not send data to Web Robots.
+ 
+ 
+ D. (10 points) Within your report describe what you have derived about the URL for yelp pages. What are the differences between the three URLs? What are the parameters that determined your search query (Boston burger restaurants in 8 selected neighborhoods)? What is(are) the parameter(s) used for pagination? Without opening Yelp.com in the browser, what is your guess of the URL for the 7th page of Chinese restaurants in New York?
+ 
+The urls: 
+1. https://www.yelp.com/search?find_desc=Burgers&start=0&cflt=burgers&l=p:MA:Boston::%5BAllston/Brighton,Back_Bay,Beacon_Hill,Downtown,Fenway,South_End,West_End%5D
+
+2. https://www.yelp.com/search?find_desc=Burgers&start=10&cflt=burgers&l=p:MA:Boston::%5BAllston/Brighton,Back_Bay,Beacon_Hill,Downtown,Fenway,South_End,West_End%5D
+
+3. https://www.yelp.com/search?find_desc=Burgers&start=20&cflt=burgers&l=p:MA:Boston::%5BAllston/Brighton,Back_Bay,Beacon_Hill,Downtown,Fenway,South_End,West_End%5D
+
+The difference between the three URLs is &start= which is 0 in first, 10 in second and 20 in third url.
+
+Parameters for search:
+1. "search?find_desc=": This identifies the search terms used which in this case is burgers.
+
+2. "&cflt=": This is a category filter that allows you to specify the categories which are to be searched.
+
+3. "&l=": This is for location which is to be used in the search result
+
+4. "%5": This is for neighborhood filters on the larger location
+
+Parameter for pagination: 
+1.. "&start=": This identifies the start of the result of the query. First page starts with 0 results so it is 0, second page starts with 10th result so it is 10 and 3rd starts with 20th so it is 20. 
+
+My guess of the URL for the 7th page of Chinese restaurants in New York is:
+https://www.yelp.com/search?find_desc=Chinese&start=60&cflt=chinese&l=p:NY:NewYork:%5D
+
+
+
+
+
+
+
+ 
+
